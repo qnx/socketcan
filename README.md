@@ -4,6 +4,27 @@ This project contains a QNX io-sock module implementation of Linux's SocketCAN.
 ## What is SocketCAN
 SocketCAN is a Linux CAN implementation which lives in the networking layer. It was done this way so client queues and other mechanisms could be reused. In order to add this, a new address family AF_CAN was added. The main CAN protocol is CAN_RAW which allows you to communicate to can devices by using frames with read and write calls directly. There is also CAN_BCM but is not supported in this implementation.
 
+## Notice on Software Maturity and Quality
+The software included in this (delivery/repository/archive/release) is classified under the QNX
+Software Maturity Standard as Experimental Software.
+As defined in the QNX Development License Agreement
+(http://www.qnx.com/download/feature.html?programid=68651), Experimental Software
+represents early-stage deliverables intended for evaluation or proof-of-concept purposes.
+Experimental software is provided without one or more of the following:
+- Formal requirements
+- Formal design or architecture
+- Formal testing
+- Formal support
+- Formal documentation
+- Certifications of any type
+- End-of-Life or End-of-Support policy
+
+Additionally, this software is not monitored or scanned under our Cybersecurity Management
+Standard.
+
+No warranties, guarantees, or claims are offered. Please refer to the QDL for more details
+about our support and maintenance policy for Experimental Software.
+
 ## Where can I learn more
 Each component contains a README.md explaining a bit about the component as well as how to use it.
 
@@ -17,7 +38,7 @@ make
 ```
 
 ### Building module
-The module cannot currently be built due to requiring some internal hooks. We are working to remove this dependency on internal io-sock code and in the meantime have supplied a build module in. Once the dependency has been removed the remaining source will be released.
+The module cannot currently be built due to requiring some internal hooks. We are working to remove this dependency on internal io-sock code and in the meantime have supplied a build module for [aarch64](./lib/can/nto/aarch64/dll.le/mods-can.so) and [x86_64](./lib/can/nto/x86_64/dll/mods-can.so). Once the dependency has been removed the remaining source will be released.
 
 The remaining (not internal) source code is released for reference but can't be built.
 
