@@ -1,0 +1,9 @@
+mods*.use
+devs*.use
+*.o
+*.so*
+*.pinfo
+*.dep
+
+# Internal files.
+sockcan_internal.c

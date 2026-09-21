@@ -1,0 +1,60 @@
+%C CAN control utility
+
+Syntax:
+    canctrl (interface) [options]
+Options:
+    devinfo         get device info. If no option is specified
+                    this is the default
+
+    timing          get nominal bittiming options for (interface)
+    timing[:topts]  set nominal bittiming options for (interface)
+    dtiming         get data bittiming options for (interface)
+    dtiming[:topts] set data bittiming options for (interface)
+
+    maxtxq          get maxtxq for (interface)
+    maxtxq=<num>    set maxtxq for (interface)
+    maxrxq          get maxrxq for (interface)
+    maxrxq=<num>    set maxrxq for (interface)
+
+    chnlopt         get channel options for (interface)
+    chnlopt[:copts] set channel options for (interface)
+
+    up              set (interface) to IFUP state
+    down            set (interface) to IFDOWN state
+
+
+Incomplete/Testing Options:
+    filter      set filter for (interface)
+    sockopt     set sockopt for (interface)
+    chnlopt     set channel options for (interface)
+
+topts - Timing specific options
+A comma separated list of key=value pairs. Valid keys are:
+    bitrate      - Bitrate in bps
+    clkrate      - Input clock in Hz
+    sample_point - Sample point in tenths of a percent
+    tq           - Tq value in ns
+    prop_seg     - # of Tqs in propegation segment
+    phase_seg1   - # of Tqs in phase1 segment
+    phase_seg2   - # of Tqs in phase2 segment
+    sjw          - # of Tqs
+    brp          - Presale (divide) clkrate
+Not all interfaces support every possible topt.
+
+copts - Channel specific options
+A comma separated list of key=value pairs. Valid keys are:
+    fd=[1|0]       - Enable/disable fd
+    listen=[1|0]   - Enable/disable listen only (Tx is disabled)
+    loopback=[1|0] - Enable/disable loopback mode
+    self_ack=[1|0] - Enable/disable sending an ACK when transmitting
+    extended=[1|0] - Enable/disable extended IDs
+
+Examples:
+/* set p_ch0 down */
+    canctrl p_ch0 down
+
+/* set custom timing (interface must be down) */
+    canctrl p_ch0 timing:bitrate=250000,clkrate=24,sample_point=85,tq=1,prop_seg=0,phase_seg1=12,phase_seg2=1,sjw=1,brp=5
+
+/* set loopback and extended MID for channel 2 */
+    canctrl p_ch2 chnlopt:loopback=1,extended=1
