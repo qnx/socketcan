@@ -68,13 +68,13 @@ SOCK=/can ifconfig
 Loading a driver does not create any interfaces, so you need to create one before there is anything to read from or write to. This mirrors Linux, where you would run
 `ip link add dev vcan0 type vcan`. For the vcan driver:
 ```bash
-SOCK=/can ifconfig vcan0 create
+SOCK=/can ifconfig vcan0 create up
 ```
 
 Leave the unit number off to have the next free one picked for you; the allocated name is
 printed:
 ```bash
-SOCK=/can ifconfig vcan create
+SOCK=/can ifconfig vcan create up
 vcan1
 ```
 
