@@ -327,8 +327,8 @@ int sockcan_input(struct can_pcb *pcb, sockcan_dev_t *dev, struct mbuf *m) {
         loopback_frame = m_copym(m, 0, M_COPYALL, M_NOWAIT);
 
         // loopback is best effort if we drop it just add it to the counter and continue.
-        if (loopback_frame != NULL) {
-            CAN_LOG_ERR("Unable to copy loopback frame frame for %s. Loopback frame dropped.", dev->ifp->if_xname);
+        if (loopback_frame == NULL) {
+            CAN_LOG_ERR("Unable to copy loopback frame frame for %s. Loopback frame dropped. %s", dev->ifp->if_xname, strerror(errno));
             if_inc_counter(dev->ifp, IFCOUNTER_OERRORS, 1);
         }
     }
@@ -342,10 +342,8 @@ int sockcan_input(struct can_pcb *pcb, sockcan_dev_t *dev, struct mbuf *m) {
     if (loopback_frame != NULL) {
         if (err == 0) {
             sockcan_deliver(dev, loopback_frame, pcb);
-        } else {
-            // The driver rejected the frame, so don't echo it as if it reached the bus.
-            m_freem(loopback_frame);
         }
+        m_freem(loopback_frame);
     }
 
     return err;
