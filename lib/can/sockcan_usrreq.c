@@ -235,11 +235,16 @@ static int sockcan_send(struct socket *so, int flags, struct mbuf *m, struct soc
             err = EAFNOSUPPORT;
             goto error;
         }
-        if (!(held->if_flags & IFF_UP)) {
-            err = ENETDOWN;
-            goto error;
-        }
         dev = held->if_softc;
+    }
+
+    /**
+     * Check the interface is up before continuing. A down interface is not allowed to send or receive even after
+     * a successful bind().
+     */
+    if (!(dev->ifp->if_flags & IFF_UP)) {
+        err = ENETDOWN;
+        goto error;
     }
 
     // Validate the frame size against the socket and the resolved interface.
@@ -454,6 +459,7 @@ static int sockcan_control(struct socket *so, u_long cmd, void *data, struct ifn
                 return ENODEV;
             }
             strcpy(data, net->if_xname);
+            if_rele(net);
             return 0;
         }
         case SIOCSCANBITTIMING:
@@ -486,6 +492,32 @@ static int sockcan_soreceive(struct socket *so, struct sockaddr **paddr, struct 
     }
 
     /**
+     * Before reading make sure we are successfully connected
+     *
+     * There is 2 cases:
+     * - A device is bind directly
+     * - CAN_IFC_BIND_ANY
+     *
+     * If the connection is bound to a device check to make sure that the interface is up.
+     */
+    sockcan_dev_t *dev = pcb->device;
+    if (dev == NULL) {
+        if (pcb->ifc != CAN_IFC_BIND_ANY) {
+            CAN_LOG_ERR("Socket not bound to device.");
+            return ENOTCONN;
+        }
+    } else {
+        /**
+         * Check the interface is up before continuing. A down interface is not allowed to send or receive even after
+         * a successful bind().
+         */
+        if (!(dev->ifp->if_flags & IFF_UP)) {
+            CAN_LOG_ERR("bound device not up.");
+            return ENETDOWN;
+        }
+    }
+
+    /**
      * soreceive_generic will block until data has arrived popping it off
      * the stack before returning mean we won't get a chance to get the clients
      * last timestamp.
@@ -499,6 +531,11 @@ static int sockcan_soreceive(struct socket *so, struct sockaddr **paddr, struct 
     // this read) waiting here would sleep forever.
     int err = 0;
     if (sbavail(&so->so_rcv) == 0 && !(so->so_rcv.sb_state & SBS_CANTRCVMORE)) {
+        // If MSG_DONTWAIT is set a non blocking read and only configure if you have to wait.
+        if (so->so_state & SS_NBIO || (flags & (MSG_DONTWAIT | MSG_NBIO))) {
+            SOCKBUF_UNLOCK(&so->so_rcv);
+            return EWOULDBLOCK;
+        }
         err = sbwait(so, SO_RCV);
     }
     // sbwait returns an error when interrupted by a signal. If we swallowed it and

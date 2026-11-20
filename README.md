@@ -54,7 +54,7 @@ CAN_BCM is currently not supported nor planned for the future.
 ### Using an alterative networking stack
 If you want to test out SocketCAN without affecting your existing network stack you can start a new io-sock instance with the following command. In this case /can is used for our alternative stack.
 ```bash
-io-sock -m /data/home/qnxuser/mods-can.so -d /data/home/qnxuser/devs-can-vcan.so -o prefix=/can
+io-sock -m /data/home/qnxuser/SocketCAN/mods-can.so -d /data/home/qnxuser/SocketCAN/devs-can-vcan.so -o prefix=/can
 ```
 
 Now your SocketCAN stack should be created and you can run commands prefixed with SOCK=<stack_path>.

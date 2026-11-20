@@ -9,7 +9,9 @@
  */
 
 #include <errno.h>
+#include <fcntl.h>
 #include <getopt.h>
+#include <hw/socketcan.h>
 #include <net/if.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -18,7 +20,6 @@
 #include <sys/ioctl.h>
 #include <sys/select.h>
 #include <sys/socket.h>
-#include <hw/socketcan.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -46,6 +47,7 @@ static void usage(const char *prog) {
             "  -n, --count <N>       stop after N frames (default: unlimited)\n"
             "  -s, --seconds <S>     stop after S seconds (default: run forever)\n"
             "  -t, --timestamp       print each frame's receive timestamp\n"
+            "  -b, --non-blocking     Non blocking read's (sleeps 1 second between blocked reads.)\n"
             "      --timestamp-ns    the same at nanosecond resolution (SIOCGSTAMPNS)\n"
             "      --err-filter <m>  receive error frames whose CAN_ERR_* class bits\n"
             "                        intersect mask m (default 0: no error frames)\n"
@@ -114,6 +116,7 @@ int main(int argc, char *argv[]) {
     bool join_filters = false;
     bool eff_only     = false;
     bool rtr_only     = false;
+    bool non_blocking = false;
     int  nfilters     = 0;
     long count        = 0;  // 0 => unlimited
     long seconds      = 0;  // 0 => no time limit
@@ -127,6 +130,7 @@ int main(int argc, char *argv[]) {
                                         {"rtr", no_argument, NULL, OPT_RTR},
                                         {"count", required_argument, NULL, 'n'},
                                         {"seconds", required_argument, NULL, 's'},
+                                        {"non-blocking", no_argument, NULL, 'b'},
                                         {"timestamp", no_argument, NULL, 't'},
                                         {"timestamp-ns", no_argument, NULL, OPT_TS_NS},
                                         {"err-filter", required_argument, NULL, OPT_ERR_FILTER},
@@ -134,7 +138,7 @@ int main(int argc, char *argv[]) {
                                         {0, 0, 0, 0}};
 
     int opt;
-    while ((opt = getopt_long(argc, argv, "ef:jn:s:th", long_opts, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "bef:jn:s:th", long_opts, NULL)) != -1) {
         switch (opt) {
             case OPT_FD:
                 fd_mode = true;
@@ -167,6 +171,9 @@ int main(int argc, char *argv[]) {
                 break;
             case 't':
                 want_ts = true;
+                break;
+            case 'b':
+                non_blocking = true;
                 break;
             case OPT_TS_NS:
                 want_ts_ns = true;
@@ -238,6 +245,11 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    if (non_blocking && fcntl(s, F_SETFL, O_NONBLOCK) < 0) {
+        perror("fcntl(O_NONBLOCK), failed");
+        exit(EXIT_FAILURE);
+    }
+
     long   received = 0;
     time_t start    = time(NULL);
     for (;;) {
@@ -275,6 +287,12 @@ int main(int argc, char *argv[]) {
         ssize_t            size  = read(s, &frame, fd_mode ? CANFD_MTU : CAN_MTU);
         if (size < 0) {
             perror("read() failure");
+
+            // Don't error out on EWOULDBLOCK as messages may be still coming
+            if (errno == EWOULDBLOCK) {
+                sleep(1);
+                continue;
+            }
             close(s);
             return 1;
         }
