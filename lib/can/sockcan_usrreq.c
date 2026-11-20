@@ -459,6 +459,7 @@ static int sockcan_control(struct socket *so, u_long cmd, void *data, struct ifn
                 return ENODEV;
             }
             strcpy(data, net->if_xname);
+            if_rele(net);
             return 0;
         }
         case SIOCSCANBITTIMING:
